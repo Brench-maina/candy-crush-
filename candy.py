@@ -60,6 +60,21 @@ def detect_matches():
                 matches.update({(row, col), (row + 1, col), (row + 2, col)})   
     return matches 
 
+def collapse_grid():
+    for col in range(grid_size):
+        for row in range(grid_size - 1, -1, -1):
+            if grid[row][col] == 0: # if empty
+                for above in range(row -1, -1, -1):
+                    if grid[above][col] != 0:
+                        grid[row][col] = grid[above][col]
+                        grid[above][col] = 0
+                        break
+                    #fill the top with new candies
+                else: 
+                    grid[row][col] = create_candy()   
+
+
+
 # main game loop
 while running:
 
@@ -79,7 +94,7 @@ while running:
     if matches:
         for row, col in matches:
             delete_candy(row, col)
-
+        collapse_grid()
 
     #draw the candies
     for row in range(grid_size):
