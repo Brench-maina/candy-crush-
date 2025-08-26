@@ -25,6 +25,8 @@ def create_candy():
 
 grid = [[create_candy() for _ in range(grid_size)] for _ in range(grid_size)]
 selected_candy = None
+# initial score
+score = 0
 
 
 def read_candy(row, col):
@@ -59,6 +61,7 @@ def detect_matches():
             if grid[row][col] == grid[row + 1][col] == grid[row + 2][col] != 0:
                 matches.update({(row, col), (row + 1, col), (row + 2, col)})   
     return matches 
+    
 
 def collapse_grid():
     for col in range(grid_size):
@@ -73,7 +76,9 @@ def collapse_grid():
                 else: 
                     grid[row][col] = create_candy()   
 
-
+#menu
+menu_height = 50
+font = pygame.font.Font(None, 36)
 
 # main game loop
 while running:
@@ -92,6 +97,7 @@ while running:
     #check foor matches
     matches = detect_matches()
     if matches:
+        score += len(matches) # increase score
         for row, col in matches:
             delete_candy(row, col)
         collapse_grid()
@@ -104,7 +110,10 @@ while running:
                 candy_color = COLORS[candy_type]
                 pygame.draw.rect(screen, candy_color,
                                 (col * cell_size, row * cell_size, cell_size - 2, cell_size - 2))
-
+ 
+    pygame.draw.rect(screen, (50,50,50), (0, 0, width, menu_height))   #menu background
+    score_text = font.render(f"Score: {score}", True, (255, 255,255))
+    screen.blit(score_text, (10, 10)) #draw score
 
     # flip() the display to put your work on screen
     pygame.display.flip()
