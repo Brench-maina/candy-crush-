@@ -1,22 +1,28 @@
 import pygame
 import random
+import os
+print(os.getcwd()) 
 
 # pygame setup
 pygame.init()
 
-width, height = 800, 600
-grid_size = 20
+width, height = 800, 800
+grid_size = 10
 cell_size = width // grid_size
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Candy Crush Lite")
 clock = pygame.time.Clock()
 running = True
 
-COLORS = {
-    1: (255, 0, 0),     #red
-    2: (0, 255, 0),     #green
-    3: (0, 0, 255),     #blue
-    4: (255, 255, 0)    #yellow
+def load_image(path):
+    image = pygame.image.load(path).convert_alpha()
+    return pygame.transform.scale(image, (cell_size - 2, cell_size - 2))
+
+IMAGES = {
+    1: load_image("images/blueCandy.png"),
+    2: load_image("images/orangeCandy.png"),
+    3: load_image("images/purpleCandy.png"),
+    4: load_image("images/redCandy.png"),
 }
 
 def create_candy():
@@ -25,9 +31,7 @@ def create_candy():
 
 grid = [[create_candy() for _ in range(grid_size)] for _ in range(grid_size)]
 selected_candy = None
-# initial score
-score = 0
-
+score = 0  # initial score
 
 def read_candy(row, col):
     return grid[row][col] 
@@ -45,22 +49,30 @@ def handle_click(row, col):
     else:
         r1, c1 = selected_candy
         grid[row][col], grid[r1][c1] = grid[r1][c1], grid[row][col]
+        if detect_matches():
+            pass
+        else:
+            pygame.display.flip()
+            pygame.time.delay(500)
+            grid[row][col], grid[r1][c1] = grid[r1][c1], grid[row][col]
         selected_candy = None
    
 def detect_matches():
     matches = set()
     
-    #check horizontal matches
+    # check horizontal matches
     for row in range(grid_size):
         for col in range(grid_size - 2):
-            if grid[row][col] ==grid[row][col + 1 ] == grid[row][col + 2] != 0:
+            if grid[row][col] == grid[row][col + 1] == grid[row][col + 2] != 0:
                 matches.update({(row, col), (row, col + 1), (row, col + 2)})
-       #check vertical matches      
+
+    # check vertical matches      
     for col in range(grid_size):
         for row in range(grid_size - 2):
             if grid[row][col] == grid[row + 1][col] == grid[row + 2][col] != 0:
                 matches.update({(row, col), (row + 1, col), (row + 2, col)})   
-    return matches 
+
+    return matches
     
 
 def collapse_grid():
@@ -72,11 +84,29 @@ def collapse_grid():
                         grid[row][col] = grid[above][col]
                         grid[above][col] = 0
                         break
-                    #fill the top with new candies
-                else: 
-                    grid[row][col] = create_candy()   
 
-#menu
+                else: 
+                    grid[row][col] = create_candy()   #adds a new candy  
+
+def has_moves_left():
+    for row in range(grid_size):
+        for col in range(grid_size):
+            if col + 1 < grid_size:
+                grid[row][col], grid[row][col +1] = grid[row][col + 1], grid[row][col]
+                if detect_matches():
+                    grid[row][col], grid[row][col +1] = grid[row][col + 1], grid[row][col]
+                    return True
+                grid[row][col], grid[row][col +1] = grid[row][col + 1], grid[row][col]
+            if row + 1 < grid_size:
+                grid[row][col], grid[row + 1][col] = grid[row + 1][col], grid[row][col]
+                if detect_matches():
+                    grid[row][col], grid[row + 1][col] = grid[row + 1][col], grid[row][col]
+                    return True
+                grid[row][col], grid[row + 1][col] = grid[row + 1][col], grid[row][col]
+
+    return False
+
+# menu
 menu_height = 50
 font = pygame.font.Font(None, 36)
 
@@ -89,12 +119,13 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
             col = x // cell_size
-            row = y // cell_size
-            handle_click(row, col)  
+            row = (y - menu_height) // cell_size  # ✅ subtract menu height
+            if row >= 0:  # ignore clicks on menu
+                handle_click(row, col) 
 
-    screen.fill(("purple"))  # fill the screen with purple
+    screen.fill("purple")  # fill the screen with purple
 
-    #check foor matches
+    # check for matches
     matches = detect_matches()
     if matches:
         score += len(matches) # increase score
@@ -102,22 +133,22 @@ while running:
             delete_candy(row, col)
         collapse_grid()
 
-    #draw the candies
+    # ✅ DRAW SECTION must be inside while loop
     for row in range(grid_size):
         for col in range(grid_size):
             candy_type = read_candy(row, col)
-            if candy_type !=0:
-                candy_color = COLORS[candy_type]
-                pygame.draw.rect(screen, candy_color,
-                                (col * cell_size, row * cell_size, cell_size - 2, cell_size - 2))
- 
+            if candy_type != 0:
+                screen.blit(IMAGES[candy_type],
+                            (col * cell_size, row * cell_size + menu_height))
+
+    # draw menu background + score
     pygame.draw.rect(screen, (50,50,50), (0, 0, width, menu_height))   #menu background
     score_text = font.render(f"Score: {score}", True, (255, 255,255))
     screen.blit(score_text, (10, 10)) #draw score
 
     # flip() the display to put your work on screen
     pygame.display.flip()
-
+    
     clock.tick(60)  # limits FPS to 60
 
 pygame.quit()
