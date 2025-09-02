@@ -5,7 +5,7 @@ import random
 # pygame setup
 pygame.init()
 
-width, height = 800, 800
+width, height = 800, 600
 grid_size = 10
 cell_size = width // grid_size
 screen = pygame.display.set_mode((width, height))
@@ -42,17 +42,17 @@ def delete_candy(row,col):
 def handle_click(row, col):
     global selected_candy
     if selected_candy is None:
-        selected_candy = (row, col)
+        selected_candy = (row, col)   # first click
     else:
-        r1, c1 = selected_candy
+        r1, c1 = selected_candy        #second click: swap with the first selected candy
         grid[row][col], grid[r1][c1] = grid[r1][c1], grid[row][col]
         if detect_matches():
             pass
         else:
             pygame.display.flip()
-            pygame.time.delay(500)
+            pygame.time.delay(500) 
             grid[row][col], grid[r1][c1] = grid[r1][c1], grid[row][col]
-        selected_candy = None
+        selected_candy = None    #reset selection
    
 def detect_matches():
     matches = set()
@@ -72,13 +72,13 @@ def detect_matches():
 
     return matches
     
-
+#makes candies to fall down to fill gaps
 def collapse_grid():
     for col in range(grid_size):
         for row in range(grid_size - 1, -1, -1):
             if grid[row][col] == 0: # if empty
                 for above in range(row -1, -1, -1):
-                    if grid[above][col] != 0:
+                    if grid[above][col] != 0:  
                         grid[row][col] = grid[above][col]
                         grid[above][col] = 0
                         break
@@ -96,7 +96,7 @@ while detect_matches():
             delete_candy(row, col)
         collapse_grid()
                     
-
+#checks if there are still valid moves
 def has_moves_left():
     for row in range(grid_size):
         for col in range(grid_size):
